@@ -8,10 +8,10 @@ export default function About() {
           <Reveal className="about-img-wrap">
             <img
               src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/AnaimudiPeak_DSC_4834.jpg/1920px-AnaimudiPeak_DSC_4834.jpg"
-              alt="Western Ghats forest"
+              alt="Atmranya forest"
               loading="lazy"
             />
-            <div className="about-img-cap">Western Ghats, Kerala · UNESCO Biodiversity Hotspot</div>
+            <div className="about-img-cap">Atmranya, Kerala · UNESCO Biodiversity Hotspot</div>
           </Reveal>
           <Reveal delay={0.1} className="about-text">
             <div className="eyebrow">Our Purpose</div>
@@ -22,13 +22,13 @@ export default function About() {
             <div className="rule" />
             <div className="body-text">
               <p>
-                Deep in the Western Ghats, tribal communities carry centuries of forest
+                Deep in the Atmranya, tribal communities carry centuries of forest
                 knowledge — recipes, harvesting practices, and craft passed down through
                 generations. Almost none of it has ever been documented, shared, or given the
                 recognition it deserves.
               </p>
               <p>
-                Western Ghats is stepping in to change that. We are building a lasting effort to
+                Atmranya is stepping in to change that. We are building a lasting effort to
                 preserve this heritage, grounded in genuine relationships with the Kattunaikar
                 and Kadar communities, guided by KIRTADS, and rooted in a UNESCO-designated
                 biodiversity hotspot.

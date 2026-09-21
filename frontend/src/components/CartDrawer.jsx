@@ -127,7 +127,7 @@ function CheckoutView() {
         key: data.key,
         amount: data.prebookingAmount * 100,
         currency: 'INR',
-        name: 'Western Ghats',
+        name: 'Atmranya',
         description: 'Pre-booking — Heritage Collection',
         image: 'https://raw.githubusercontent.com/azure-2k4/WesternGhatsBrochure/d2edb106ea36ae4d9b6fe6ae23cf4fe9aaed42e4/Jun%2010%2C%202026%2C%2011_58_03%20AM.png',
         order_id: data.razorpayOrderId,

@@ -53,7 +53,7 @@ export default function Vision() {
         >
           &ldquo;To become India&rsquo;s most trusted steward of forest-origin heritage —
           preserving and sharing the unique flavors, traditions, and cultural knowledge of the
-          Western Ghats with the world, for as long as they endure.&rdquo;
+          Atmranya with the world, for as long as they endure.&rdquo;
         </Reveal>
       </div>
     </div>

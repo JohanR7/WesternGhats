@@ -37,14 +37,14 @@ export default function Community() {
                   <img
                     src={LOGO_URL}
                     style={{ height: 56, width: 'auto' }}
-                    alt="Western Ghats"
+                    alt="Atmranya"
                     loading="lazy"
                     onError={() => setLogoError(true)}
                   />
                 ) : (
                   <div style={{ fontSize: '2.4rem' }}>🌿</div>
                 )}
-                <h4>Western Ghats</h4>
+                <h4>Atmranya</h4>
                 <p>Forest-Origin Heritage Food Brand</p>
               </div>
               <div className="kit-sep">×</div>
@@ -63,8 +63,8 @@ export default function Community() {
           <Reveal as="div" delay={0.1}>
             <div className="body-text" style={{ marginBottom: 18 }}>
               <p>
-                KIRTADS — a Government of Kerala statutory body — is actively guiding Western
-                Ghats on respectful community engagement, ethical sourcing, and fair tribal
+                KIRTADS — a Government of Kerala statutory body — is actively guiding Atmranya
+                on respectful community engagement, ethical sourcing, and fair tribal
                 partnership. This gives our preservation work real institutional grounding, from
                 a body with direct responsibility for tribal welfare.
               </p>

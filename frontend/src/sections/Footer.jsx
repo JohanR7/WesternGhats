@@ -13,7 +13,7 @@ export default function Footer() {
           {!logoError ? (
             <img
               src={LOGO_URL}
-              alt="Western Ghats"
+              alt="Atmranya"
               className="footer-logo-img"
               onError={() => setLogoError(true)}
             />
@@ -26,11 +26,11 @@ export default function Footer() {
             </div>
           )}
           <div>
-            <div className="footer-name">Western Ghats</div>
+            <div className="footer-name">Atmranya</div>
             <div className="footer-tag">&ldquo;Every purchase preserves a tradition.&rdquo;</div>
           </div>
         </div>
-        <div className="footer-copy">© 2026 Western Ghats · Confidential Investor Document · Kerala, India</div>
+        <div className="footer-copy">© 2026 Atmranya · Confidential Investor Document · Kerala, India</div>
       </div>
     </footer>
   )

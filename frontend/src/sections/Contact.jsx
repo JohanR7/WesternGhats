@@ -29,7 +29,7 @@ export default function Contact() {
               <div className="c-icon">✉️</div>
               <div>
                 <div className="c-lbl">Email</div>
-                <div className="c-val">westernghatsorigin@gmail.com</div>
+                <div className="c-val">atmranyaofficial@gmail.com</div>
               </div>
             </Reveal>
             <Reveal as="div" delay={0.2} className="c-item">
@@ -44,7 +44,7 @@ export default function Contact() {
             {!logoError && (
               <img
                 src={LOGO_URL}
-                alt="Western Ghats"
+                alt="Atmranya"
                 className="contact-brand-img"
                 onError={() => setLogoError(true)}
               />

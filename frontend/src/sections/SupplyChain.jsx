@@ -18,7 +18,7 @@ const STEPS = [
   },
   {
     title: 'Quality Control & Packaging Unit',
-    body: 'Finished products are transported to a nearby leased operational facility managed by Western Ghats, where every batch undergoes:',
+    body: 'Finished products are transported to a nearby leased operational facility managed by Atmranya, where every batch undergoes:',
     list: [
       'Quality inspection & verification',
       'Batch validation',
@@ -55,7 +55,7 @@ export default function SupplyChain() {
           </h2>
           <div className="rule" />
           <p className="body-text">
-            Western Ghats follows a community-driven manufacturing and sourcing model designed
+            Atmranya follows a community-driven manufacturing and sourcing model designed
             to preserve authentic tribal food traditions while ensuring product quality,
             operational consistency, and long-term supply sustainability.
           </p>
@@ -81,7 +81,7 @@ export default function SupplyChain() {
         <Reveal className="msc-agreement" delay={0.1}>
           <h4>Sustainable Partnership Agreements — A Foundation for the Long Term</h4>
           <p>
-            To ensure this work can continue for years to come, Western Ghats plans to establish
+            To ensure this work can continue for years to come, Atmranya plans to establish
             formal agreements with the tribal communities involved in sourcing and manufacturing
             — developed with institutional guidance from KIRTADS. This turns an informal
             relationship into a structured, fair, and lasting partnership.
@@ -97,7 +97,7 @@ export default function SupplyChain() {
 
         <Reveal className="msc-foot" delay={0.2}>
           <p>
-            &ldquo;Western Ghats is building a supply chain where authenticity is preserved at
+            &ldquo;Atmranya is building a supply chain where authenticity is preserved at
             the source — while quality control, packaging, and commercial scalability are
             managed centrally.&rdquo;
           </p>

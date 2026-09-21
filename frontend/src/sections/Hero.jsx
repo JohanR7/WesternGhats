@@ -49,7 +49,7 @@ export default function Hero() {
           {!logoError ? (
             <img
               src={LOGO_URL}
-              alt="Western Ghats"
+              alt="Atmranya"
               className="hero-logo-img"
               onError={() => setLogoError(true)}
             />
@@ -63,7 +63,7 @@ export default function Hero() {
               </div>
             </div>
           )}
-          <span className="hero-logo-name">Western Ghats</span>
+          <span className="hero-logo-name">Atmranya</span>
         </div>
         <div className="hero-eyebrow" ref={eyebrowRef}>
           A Cultural Preservation Initiative · 2026
@@ -75,7 +75,7 @@ export default function Hero() {
         </h1>
         <p className="hero-sub" ref={subRef}>
           A community-rooted effort to preserve the recipes, craftsmanship, and living
-          traditions of the Western Ghats — carried by the tribal communities who have kept
+          traditions of the Atmranya — carried by the tribal communities who have kept
           them for centuries, and shared with the world before they are lost.
         </p>
         <div className="hero-actions" ref={actionsRef}>

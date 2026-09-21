@@ -77,7 +77,7 @@ function LoginScreen({ onLogin }) {
       <div className="adm-login-card">
         <div className="adm-login-brand">
           <div className="adm-login-logo">🌿</div>
-          <h1>Western Ghats</h1>
+          <h1>Atmranya</h1>
           <p>Admin Portal</p>
         </div>
         <form onSubmit={handleSubmit} className="adm-login-form">
@@ -126,7 +126,7 @@ function Sidebar({ onLogout }) {
       <div className="adm-sidebar-brand">
         <span className="adm-sidebar-logo">🌿</span>
         <div>
-          <div className="adm-sidebar-title">Western Ghats</div>
+          <div className="adm-sidebar-title">Atmranya</div>
           <div className="adm-sidebar-sub">Admin</div>
         </div>
       </div>

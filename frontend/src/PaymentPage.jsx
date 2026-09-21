@@ -47,7 +47,7 @@ export default function PaymentPage() {
       order_id: rzpOrderId,
       amount: Math.round(Number(amount) * 100),
       currency: 'INR',
-      name: 'Western Ghats Heritage',
+      name: 'Atmranya Heritage',
       description: `Final Payment — Order #${orderId?.split('-')[0]?.toUpperCase()}`,
       prefill: {
         name:    order?.customer?.name    || '',
@@ -214,7 +214,7 @@ export default function PaymentPage() {
         <div className="pay-card">
           <div className="pay-brand">
             <span className="pay-brand-icon">🌿</span>
-            <h2>Western Ghats</h2>
+            <h2>Atmranya</h2>
             <p>Heritage Food — Forest Origin</p>
           </div>
           <div className="pay-divider" />
