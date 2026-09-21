@@ -30,6 +30,11 @@ export function CartProvider({ children }) {
     setItems((prev) => prev.filter((i) => i.id !== id))
   }
 
+  function clearCart() {
+    setItems([])
+    setView('cart')
+  }
+
   function updateQty(id, qty) {
     if (qty < 1) {
       removeItem(id)
@@ -65,6 +70,7 @@ export function CartProvider({ children }) {
     addItem,
     removeItem,
     updateQty,
+    clearCart,
     totalItems,
     totalPrice,
     isOpen,
