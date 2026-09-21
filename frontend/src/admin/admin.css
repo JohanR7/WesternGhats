@@ -515,6 +515,14 @@
   font-weight: 700;
 }
 
+.adm-step-btn.pending {
+  border-color: #f59e0b;
+  background: rgba(245,158,11,0.12);
+  color: #f59e0b;
+  font-weight: 600;
+  box-shadow: 0 0 0 2px rgba(245,158,11,0.25);
+}
+
 /* ── Notify ── */
 .adm-notify-actions {
   padding: 20px;

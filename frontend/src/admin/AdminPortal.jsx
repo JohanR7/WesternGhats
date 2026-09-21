@@ -312,6 +312,7 @@ function OrdersList({ creds }) {
                 <tr>
                   <th>Order ID</th>
                   <th>Customer</th>
+                  <th>Email</th>
                   <th>WhatsApp</th>
                   <th>Total</th>
                   <th>Pre-paid</th>
@@ -327,6 +328,7 @@ function OrdersList({ creds }) {
                   <tr key={o.id}>
                     <td>#{o.id.split('-')[0].toUpperCase()}</td>
                     <td>{o.customer_name}</td>
+                    <td style={{ fontSize: '0.72rem', color: '#7a9080' }}>{o.email || '—'}</td>
                     <td>{o.whatsapp}</td>
                     <td>{fmt(o.total_amount)}</td>
                     <td className="green-text">{fmt(o.prebooking_amount)}</td>
@@ -363,6 +365,9 @@ function OrderDetail({ creds }) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
+  const [pendingStatus, setPendingStatus] = useState(null)  // selected but not yet saved
+  const [sendEmail, setSendEmail] = useState(false)         // toggle: send email on save
+  const [editAmt, setEditAmt] = useState(null)              // null = not editing, string = editing
 
   const load = useCallback(() => {
     fetch(`${API}/api/admin/orders/${orderId}`, { headers: { Authorization: getAuthHeader(creds) } })
@@ -373,18 +378,26 @@ function OrderDetail({ creds }) {
 
   useEffect(() => { load() }, [load])
 
-  async function updateDelivery(status) {
+  async function saveStatus() {
+    if (!pendingStatus) return
     setSaving(true)
     setMsg('')
     const res = await fetch(`${API}/api/admin/orders/${orderId}/delivery-status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', Authorization: getAuthHeader(creds) },
-      body: JSON.stringify({ delivery_status: status }),
+      body: JSON.stringify({ delivery_status: pendingStatus, sendEmail }),
     })
     const d = await res.json()
     setSaving(false)
-    if (res.ok) { setMsg('✅ Status updated. WhatsApp sent if delivered.'); load() }
-    else setMsg('❌ ' + d.error)
+    if (res.ok) {
+      const emailNote = sendEmail ? (d.emailSent ? ' Email sent ✅' : ' Email failed ❌') : ''
+      setMsg(`✅ Status saved: ${pendingStatus.replace(/_/g,' ')}.${emailNote}`)
+      setPendingStatus(null)
+      setSendEmail(false)
+      load()
+    } else {
+      setMsg('❌ ' + d.error)
+    }
   }
 
   async function markDelivered() {
@@ -409,6 +422,27 @@ function OrderDetail({ creds }) {
     const d = await res.json()
     setSaving(false)
     setMsg(res.ok ? `✅ Payment link resent to ${d.message?.split('to ')?.[1] || 'customer'}.` : '❌ ' + d.error)
+  }
+
+  async function saveRemainingAmount() {
+    const amount = parseFloat(editAmt)
+    if (isNaN(amount) || amount < 0) { setMsg('❌ Invalid amount'); return }
+    setSaving(true)
+    setMsg('')
+    const res = await fetch(`${API}/api/admin/orders/${orderId}/remaining-amount`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: getAuthHeader(creds) },
+      body: JSON.stringify({ remaining_amount: amount }),
+    })
+    const d = await res.json()
+    setSaving(false)
+    if (res.ok) {
+      setMsg(`✅ Balance updated to ₹${amount.toFixed(2)}. Next payment link will use this amount.`)
+      setEditAmt(null)
+      load()
+    } else {
+      setMsg('❌ ' + d.error)
+    }
   }
 
   if (loading) return <div className="adm-loading">Loading order…</div>
@@ -448,9 +482,67 @@ function OrderDetail({ creds }) {
           <div className="adm-detail-rows">
             <div className="adm-detail-row"><span>Cart Total</span><strong>{fmt(order.total_amount)}</strong></div>
             <div className="adm-detail-row"><span>Pre-booking Paid</span><strong className="green-text">{fmt(order.prebooking_amount)}</strong></div>
-            <div className="adm-detail-row"><span>Balance Due</span><strong className="amber-text">{fmt(order.remaining_amount)}</strong></div>
+            <div className="adm-detail-row">
+              <span>Balance Due</span>
+              {editAmt !== null ? (
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <input
+                    type="number" min="0" step="0.01"
+                    value={editAmt}
+                    onChange={e => setEditAmt(e.target.value)}
+                    style={{
+                      width: 90, padding: '4px 8px',
+                      background: '#1a2420', border: '1px solid #b8933f',
+                      borderRadius: 6, color: '#f5f0e8', fontSize: '0.82rem',
+                    }}
+                  />
+                  <button className="adm-btn-xs" onClick={saveRemainingAmount} disabled={saving}>Save</button>
+                  <button className="adm-btn-xs" style={{ opacity: 0.6 }} onClick={() => setEditAmt(null)}>✕</button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <strong className="amber-text">{fmt(order.remaining_amount)}</strong>
+                  {!['remaining_paid','delivered'].includes(order.status) && (
+                    <button
+                      className="adm-btn-xs"
+                      style={{ fontSize: '0.6rem', padding: '2px 7px' }}
+                      onClick={() => setEditAmt(String(Number(order.remaining_amount)))}
+                    >✏️ Edit</button>
+                  )}
+                </div>
+              )}
+            </div>
             <div className="adm-detail-row"><span>Ordered</span><strong>{fmtDate(order.created_at)}</strong></div>
           </div>
+        </div>
+      </div>
+
+      {/* Razorpay / Audit Info */}
+      <div className="adm-card" style={{ marginTop: 12 }}>
+        <div className="adm-card-header">Razorpay &amp; Audit</div>
+        <div className="adm-detail-rows">
+          <div className="adm-detail-row">
+            <span>Razorpay Order ID</span>
+            <strong style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: order.razorpay_final_order_id ? '#b8933f' : '#3a5040' }}>
+              {order.razorpay_final_order_id || '— (will be created on next payment link open)'}
+            </strong>
+          </div>
+          <div className="adm-detail-row">
+            <span>Current Balance</span>
+            <strong className="amber-text">{fmt(order.remaining_amount)}</strong>
+          </div>
+          <div className="adm-detail-row">
+            <span>Last Updated</span>
+            <strong>{fmtDate(order.updated_at)}</strong>
+          </div>
+          {order.razorpay_final_order_id === null && (
+            <div className="adm-detail-row">
+              <span></span>
+              <span style={{ fontSize: '0.7rem', color: '#b8933f' }}>
+                ⚡ Balance was edited — new Razorpay order will be auto-created when customer opens payment link
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -481,18 +573,83 @@ function OrderDetail({ creds }) {
       <div className="adm-card" style={{ marginTop: 20 }}>
         <div className="adm-card-header">Update Delivery Status</div>
         <div className="adm-delivery-controls">
+
+          {/* Status step buttons — click to select, not save */}
           <div className="adm-delivery-steps">
-            {deliveryStatuses.map(s => (
-              <button
-                key={s}
-                className={`adm-step-btn${order.delivery_status === s ? ' current' : ''}`}
-                onClick={() => updateDelivery(s)}
-                disabled={saving}
-              >
-                {s.replace(/_/g, ' ')}
-              </button>
-            ))}
+            {deliveryStatuses.map(s => {
+              const isCurrent  = order.delivery_status === s
+              const isPending  = pendingStatus === s
+              const emailLog   = order.status_email_log?.[s]
+              return (
+                <div key={s} style={{ position: 'relative', display: 'inline-block' }}>
+                  <button
+                    className={`adm-step-btn${isCurrent ? ' current' : ''}${isPending ? ' pending' : ''}`}
+                    onClick={() => { setPendingStatus(s); setMsg('') }}
+                    disabled={saving}
+                    title={isCurrent ? 'Current status' : `Set to: ${s.replace(/_/g,' ')}`}
+                  >
+                    {s.replace(/_/g, ' ')}
+                    {isCurrent && <span style={{ marginLeft: 4, opacity: 0.7 }}>◉</span>}
+                    {isPending && !isCurrent && <span style={{ marginLeft: 4, color: '#f59e0b' }}>●</span>}
+                  </button>
+                  {/* Email sent indicator */}
+                  <span style={{
+                    display: 'block', textAlign: 'center', fontSize: '0.6rem',
+                    color: emailLog?.sent ? '#22c55e' : '#3a5040', marginTop: 2,
+                  }}>
+                    {emailLog?.sent ? '✉️ sent' : '—'}
+                  </span>
+                </div>
+              )
+            })}
           </div>
+
+          {/* Save controls — only shown when a new status is pending */}
+          {pendingStatus && pendingStatus !== order.delivery_status && (
+            <div style={{
+              marginTop: 16, padding: '14px 16px',
+              background: 'rgba(184,147,63,0.08)', border: '1px solid rgba(184,147,63,0.25)',
+              borderRadius: 8,
+            }}>
+              <p style={{ fontSize: '0.82rem', color: '#b8933f', marginBottom: 10 }}>
+                📌 Setting status to: <strong>{pendingStatus.replace(/_/g,' ')}</strong>
+              </p>
+
+              {/* Send email toggle */}
+              <label style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                fontSize: '0.82rem', color: '#c8b898', cursor: 'pointer', marginBottom: 12,
+              }}>
+                <input
+                  type="checkbox"
+                  checked={sendEmail}
+                  onChange={e => setSendEmail(e.target.checked)}
+                  style={{ width: 16, height: 16, accentColor: '#b8933f' }}
+                />
+                Send status update email to customer
+                {sendEmail && <span style={{ color: '#22c55e', fontSize: '0.72rem' }}>(✉️ email will be sent)</span>}
+              </label>
+
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button
+                  className="adm-btn-primary"
+                  style={{ flex: 1, padding: '10px' }}
+                  onClick={saveStatus}
+                  disabled={saving}
+                >
+                  {saving ? '⏳ Saving…' : '✅ Save Status'}
+                </button>
+                <button
+                  className="adm-btn-outline"
+                  style={{ padding: '10px 16px' }}
+                  onClick={() => { setPendingStatus(null); setMsg('') }}
+                  disabled={saving}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Resend payment link — shown for prepaid / awaiting_final_payment */}
           {['prepaid', 'awaiting_final_payment'].includes(order.status) && (
@@ -721,7 +878,7 @@ function NotifyReady({ creds }) {
                   <thead>
                     <tr>
                       <th><input type="checkbox" onChange={e => setSelected(e.target.checked ? prepaidOrders.map(o => o.id) : [])} /></th>
-                      <th>Order ID</th><th>Customer</th><th>WhatsApp</th><th>Balance</th><th>Date</th>
+                      <th>Order ID</th><th>Customer</th><th>Email</th><th>WhatsApp</th><th>Balance</th><th>Date</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -730,6 +887,7 @@ function NotifyReady({ creds }) {
                         <td><input type="checkbox" checked={selected.includes(o.id)} onChange={() => toggleSelect(o.id)} /></td>
                         <td>#{o.id.split('-')[0].toUpperCase()}</td>
                         <td>{o.customer_name}</td>
+                        <td style={{ fontSize: '0.72rem', color: '#7a9080' }}>{o.email || '—'}</td>
                         <td>{o.whatsapp}</td>
                         <td className="amber-text">{fmt(o.remaining_amount)}</td>
                         <td>{fmtDate(o.created_at)}</td>

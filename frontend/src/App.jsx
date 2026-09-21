@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import AdminPortal from './admin/AdminPortal'
 import StorePage from './StorePage'
 import PaymentPage from './PaymentPage'
+import TrackPage from './TrackPage'
 
 export default function App() {
   return (
@@ -9,6 +10,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<StorePage />} />
         <Route path="/pay" element={<PaymentPage />} />
+        <Route path="/track" element={<TrackPage />} />
         <Route path="/western/admin/*" element={<AdminPortal />} />
       </Routes>
     </BrowserRouter>
