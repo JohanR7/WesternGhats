@@ -5,29 +5,28 @@ const API = 'http://localhost:3002'
 
 export default function PaymentPage() {
   const [params] = useSearchParams()
-  const orderId    = params.get('orderId')
-  const rzpOrderId = params.get('rzpOrderId')
-  const amount     = params.get('amount')
-  const rzpKey     = params.get('key')   // Razorpay public key from payment link
+  const orderId = params.get('orderId')   // only orderId needed from URL
 
-  const [order, setOrder]     = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [status, setStatus]   = useState(null) // 'paying' | 'success' | 'error'
-  const [errMsg, setErrMsg]   = useState('')
+  const [payInfo, setPayInfo]   = useState(null)  // { amount, rzpOrderId, key, customer }
+  const [loading, setLoading]   = useState(true)
+  const [status, setStatus]     = useState(null)  // 'paying' | 'success' | 'error' | 'already_paid'
+  const [errMsg, setErrMsg]     = useState('')
 
   useEffect(() => {
     if (!orderId) { setLoading(false); return }
-    fetch(`${API}/api/orders/${orderId}`)
+
+    // Single call to prepare-payment: checks Razorpay, syncs DB, returns correct amount
+    fetch(`${API}/api/orders/${orderId}/prepare-payment`)
       .then(r => r.json())
       .then(d => {
-        setOrder(d)
-        // If already paid, show that state immediately
-        if (['remaining_paid', 'delivered'].includes(d?.order?.status)) {
+        if (d.paid) {
           setStatus('already_paid')
+        } else {
+          setPayInfo(d)   // { amount, rzpOrderId, key, customer }
         }
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch(() => { setErrMsg('Could not load payment details. Please try again.'); setLoading(false) })
   }, [orderId])
 
   function handlePay() {
@@ -35,24 +34,24 @@ export default function PaymentPage() {
       setErrMsg('Payment gateway not loaded. Please refresh the page.')
       return
     }
-    if (!rzpKey) {
-      setErrMsg('Payment configuration missing. Please use the link from your email.')
+    if (!payInfo?.key || !payInfo?.rzpOrderId) {
+      setErrMsg('Payment configuration missing. Please refresh.')
       return
     }
     setStatus('paying')
     setErrMsg('')
 
     const rzp = new window.Razorpay({
-      key: rzpKey,
-      order_id: rzpOrderId,
-      amount: Math.round(Number(amount) * 100),
+      key:      payInfo.key,
+      order_id: payInfo.rzpOrderId,
+      amount:   Math.round(payInfo.amount * 100),
       currency: 'INR',
-      name: 'Atmranya Heritage',
+      name: 'Western Ghats Heritage',
       description: `Final Payment — Order #${orderId?.split('-')[0]?.toUpperCase()}`,
       prefill: {
-        name:    order?.customer?.name    || '',
-        email:   order?.customer?.email   || '',
-        contact: order?.customer?.whatsapp || '',
+        name:    payInfo.customer?.name    || '',
+        email:   payInfo.customer?.email   || '',
+        contact: payInfo.customer?.whatsapp || '',
       },
       theme: { color: '#b8933f' },
       handler: async function (response) {
@@ -80,37 +79,191 @@ export default function PaymentPage() {
     rzp.open()
   }
 
-  // ── Render states ──────────────────────────────────────────
+  // ── Render states ───────────────────────────────────────────
   if (status === 'success') {
+    const shortId = orderId?.split('-')[0]?.toUpperCase()
     return (
-      <div className="pay-page">
-        <div className="pay-card pay-success">
-          <div className="pay-icon">✅</div>
-          <h1>Payment Successful!</h1>
-          <p>Thank you! Your full payment has been received.</p>
-          <p>A confirmation email with your invoice has been sent.</p>
-          <p className="pay-sub">You can close this window.</p>
+      <>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap');
+          *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+          body { background: #0d1a10; }
+          .paid-page {
+            min-height: 100vh;
+            background: radial-gradient(ellipse at 50% 0%, #0d2a18 0%, #0a1a0d 70%);
+            display: flex; align-items: center; justify-content: center;
+            padding: 24px;
+            font-family: 'Inter', sans-serif;
+          }
+          .paid-card {
+            background: #111c14;
+            border: 1px solid rgba(34,197,94,0.25);
+            border-radius: 20px;
+            padding: 52px 44px;
+            max-width: 420px; width: 100%;
+            text-align: center;
+            box-shadow: 0 0 60px rgba(34,197,94,0.06), 0 24px 80px rgba(0,0,0,0.5);
+            animation: fadeUp 0.5s ease;
+          }
+          @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: none; }
+          }
+          .paid-check-wrap {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            background: rgba(34,197,94,0.12);
+            border: 2px solid rgba(34,197,94,0.4);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 28px;
+            font-size: 2.2rem; color: #22c55e;
+            animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) 0.2s both;
+          }
+          @keyframes popIn {
+            from { transform: scale(0.4); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+          }
+          .paid-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.8rem; font-weight: 400;
+            color: #f5f0e8; margin-bottom: 10px;
+          }
+          .paid-subtitle { font-size: 0.84rem; color: #5a9070; line-height: 1.7; margin-bottom: 28px; }
+          .paid-order-box {
+            background: rgba(34,197,94,0.06);
+            border: 1px solid rgba(34,197,94,0.15);
+            border-radius: 10px;
+            padding: 16px 20px; margin-bottom: 24px;
+          }
+          .paid-order-label { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: #3a6040; margin-bottom: 6px; }
+          .paid-order-id { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; color: #22c55e; font-weight: 500; }
+          .paid-divider { height: 1px; background: rgba(34,197,94,0.1); margin: 0 0 20px; }
+          .paid-brand { font-family: 'Cormorant Garamond', serif; font-size: 0.9rem; color: #2a5030; letter-spacing: 0.08em; }
+          .paid-track-link {
+            display: inline-block; margin-top: 18px;
+            font-size: 0.72rem; color: #3a6040;
+            text-decoration: none; letter-spacing: 0.06em; transition: color 0.2s;
+          }
+          .paid-track-link:hover { color: #22c55e; }
+        `}</style>
+        <div className="paid-page">
+          <div className="paid-card">
+            <div className="paid-check-wrap">✓</div>
+            <h1 className="paid-title">Payment Successful!</h1>
+            <p className="paid-subtitle">
+              Thank you! Your full payment has been received.<br />
+              A confirmation email with your invoice has been sent.
+            </p>
+            <div className="paid-order-box">
+              <div className="paid-order-label">Order Reference</div>
+              <div className="paid-order-id">#{shortId}</div>
+            </div>
+            <div className="paid-divider" />
+            <div className="paid-brand">🌿 Western Ghats Heritage</div>
+            <a href="/track" className="paid-track-link">Track your order →</a>
+          </div>
         </div>
-      </div>
+      </>
     )
   }
 
-  // Already paid — don't show payment form
+  // ── Already paid — rich styled screen ─────────────────────
   if (status === 'already_paid') {
+    const shortId = orderId?.split('-')[0]?.toUpperCase()
     return (
-      <div className="pay-page">
-        <div className="pay-card pay-success">
-          <div className="pay-icon">✅</div>
-          <h1>Payment Already Completed</h1>
-          <p>Your full payment for this order has already been received.</p>
-          <p>Check your email for the invoice and delivery updates.</p>
-          <p className="pay-sub">You can safely close this window.</p>
+      <>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@300;400;500;600&display=swap');
+          *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+          body { background: #0d1a10; }
+          .paid-page {
+            min-height: 100vh;
+            background: radial-gradient(ellipse at 50% 0%, #0d2a18 0%, #0a1a0d 70%);
+            display: flex; align-items: center; justify-content: center;
+            padding: 24px;
+            font-family: 'Inter', sans-serif;
+          }
+          .paid-card {
+            background: #111c14;
+            border: 1px solid rgba(34,197,94,0.25);
+            border-radius: 20px;
+            padding: 52px 44px;
+            max-width: 420px; width: 100%;
+            text-align: center;
+            box-shadow: 0 0 60px rgba(34,197,94,0.06), 0 24px 80px rgba(0,0,0,0.5);
+            animation: fadeUp 0.5s ease;
+          }
+          @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: none; }
+          }
+          .paid-check-wrap {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            background: rgba(34,197,94,0.12);
+            border: 2px solid rgba(34,197,94,0.4);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 28px;
+            font-size: 2.2rem;
+            animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) 0.2s both;
+          }
+          @keyframes popIn {
+            from { transform: scale(0.4); opacity: 0; }
+            to   { transform: scale(1);   opacity: 1; }
+          }
+          .paid-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.8rem; font-weight: 400;
+            color: #f5f0e8; margin-bottom: 10px;
+          }
+          .paid-subtitle { font-size: 0.84rem; color: #5a9070; line-height: 1.7; margin-bottom: 28px; }
+          .paid-order-box {
+            background: rgba(34,197,94,0.06);
+            border: 1px solid rgba(34,197,94,0.15);
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 24px;
+          }
+          .paid-order-label { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: #3a6040; margin-bottom: 6px; }
+          .paid-order-id {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem; color: #22c55e; font-weight: 500;
+          }
+          .paid-divider { height: 1px; background: rgba(34,197,94,0.1); margin: 0 0 20px; }
+          .paid-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.9rem; color: #2a5030; letter-spacing: 0.08em;
+          }
+          .paid-track-link {
+            display: inline-block; margin-top: 18px;
+            font-size: 0.72rem; color: #3a6040;
+            text-decoration: none; letter-spacing: 0.06em;
+            transition: color 0.2s;
+          }
+          .paid-track-link:hover { color: #22c55e; }
+        `}</style>
+        <div className="paid-page">
+          <div className="paid-card">
+            <div className="paid-check-wrap">✓</div>
+            <h1 className="paid-title">Payment Completed</h1>
+            <p className="paid-subtitle">
+              Your full payment has already been received and confirmed.
+              A confirmation email with your invoice has been sent.
+            </p>
+            <div className="paid-order-box">
+              <div className="paid-order-label">Order Reference</div>
+              <div className="paid-order-id">#{shortId}</div>
+            </div>
+            <div className="paid-divider" />
+            <div className="paid-brand">🌿 Western Ghats Heritage</div>
+            <a href="/track" className="paid-track-link">Track your order →</a>
+          </div>
         </div>
-      </div>
+      </>
     )
   }
 
-  if (!orderId || !rzpOrderId || !amount) {
+  if (!orderId) {
     return (
       <div className="pay-page">
         <div className="pay-card pay-error">
@@ -214,7 +367,7 @@ export default function PaymentPage() {
         <div className="pay-card">
           <div className="pay-brand">
             <span className="pay-brand-icon">🌿</span>
-            <h2>Atmranya</h2>
+            <h2>Western Ghats</h2>
             <p>Heritage Food — Forest Origin</p>
           </div>
           <div className="pay-divider" />
@@ -224,14 +377,16 @@ export default function PaymentPage() {
 
           <div className="pay-amount-box">
             <div className="pay-amount-label">Remaining Amount Due</div>
-            <div className="pay-amount-value">₹{Number(amount).toLocaleString('en-IN')}</div>
+            <div className="pay-amount-value">
+              ₹{payInfo ? Number(payInfo.amount).toLocaleString('en-IN') : '—'}
+            </div>
             <div className="pay-order-id">
               Order #{orderId?.split('-')[0]?.toUpperCase()}
             </div>
           </div>
 
           {loading ? (
-            <p className="pay-loading">Loading order details…</p>
+            <p className="pay-loading">Verifying payment details…</p>
           ) : (
             <>
               <p className="pay-info">
@@ -239,7 +394,9 @@ export default function PaymentPage() {
                 A final invoice will be emailed to you immediately after payment.
               </p>
               <button className="pay-btn" onClick={handlePay} disabled={status === 'paying'}>
-                {status === 'paying' ? '⏳ Processing…' : `💳 Pay ₹${Number(amount).toLocaleString('en-IN')}`}
+                {status === 'paying'
+                  ? '⏳ Processing…'
+                  : `💳 Pay ₹${payInfo ? Number(payInfo.amount).toLocaleString('en-IN') : ''}`}
               </button>
               {errMsg && <div className="pay-error-msg">{errMsg}</div>}
               <p className="pay-secure">🔒 Secured by Razorpay · 256-bit SSL Encryption</p>
@@ -250,3 +407,4 @@ export default function PaymentPage() {
     </>
   )
 }
+
